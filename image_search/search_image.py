@@ -31,19 +31,16 @@ def save_image(url, folder, count):
         return False
 
 def get_original_image_url(thumbnail_url):
-    '''
-    todo: 通过点击缩略图获取原始图片的URL 现在的方法是直接下载缩略图
-    :param thumbnail_url:
-    :return:
-    '''
     headers = {"User-Agent": "Mozilla/5.0"}
     # 访问缩略图页面
     response = requests.get(thumbnail_url, headers=headers)
-    print(f'content-type: {response.headers.get("content-type")}')
+
     if response.status_code == 200:
-        # 按照jpeg格式直接下载
-        if response.headers.get("content-type") == 'image/jpeg':
-            return thumbnail_url
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # 找到原始图像的 <img> 标签
+        img = soup.find('img')
+        if img and 'src' in img.attrs:
+            return img['src']
 
     print('Failed to find original image URL.')
     return None
@@ -74,6 +71,11 @@ def bing_image_search(query, folder, num_images):
             else:
                 print('Thumbnail does not have a src attribute.')
 
+        # 如果到达最后一页，重置分页
+        if not thumbnails:
+            print('No more thumbnails found. Exiting.')
+            break
+
         page += 1
         time.sleep(1)
 
@@ -82,7 +84,7 @@ def main():
     os.makedirs(folder, exist_ok=True)
 
     query = '无人机 地震'
-    num_images = 10
+    num_images = 2000
 
     print("Searching Bing...")
     bing_image_search(query, folder, num_images)
